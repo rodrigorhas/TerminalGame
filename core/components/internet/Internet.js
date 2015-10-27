@@ -17,7 +17,7 @@ function Internet () {
 
 	this.updateRates = new Event();
 
-	this.addUsage({
+	/*this.addUsage({
 		name: 'cracker',
 		size: 2000,
 		type: 'download'
@@ -27,7 +27,7 @@ function Internet () {
 		name: 'cracker2',
 		size: 1500,
 		type: 'upload'
-	})
+	})*/
 }
 
 Internet.prototype = {

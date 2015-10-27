@@ -1,1 +1,0 @@
-window.cmd.system.shellInstances.push(new Shell());

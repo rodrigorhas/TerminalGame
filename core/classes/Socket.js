@@ -1,10 +1,13 @@
-function Socket (object) {
+
+goog.provide('System.Socket');
+
+System.Socket = function (object) {
 	this._connections = {};
 	this._currentConnection;
 	this._listeners = {}
 }
 
-Socket.prototype = {
+System.Socket.prototype = {
 	connect: function (name, ip) {
 		this._connections[name] = io.connect(ip);
 	},
@@ -28,5 +31,3 @@ Socket.prototype = {
 		return false;
 	}
 }
-
-Main.SocketManager = new Socket();

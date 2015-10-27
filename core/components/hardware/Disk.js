@@ -1,4 +1,7 @@
-function Disk () {
+
+goog.provide('Computer.Hardware.Disk');
+
+Computer.Hardware.Disk = function () {
 	this.size = 0;
 	this.maxSize = 0;
 
@@ -8,7 +11,7 @@ function Disk () {
 	this.expansion = [150000, 500000, 2000000, 5000000, 10000000];
 }
 
-Disk.prototype.create = function (options) {
+Computer.Hardware.Disk.prototype.create = function (options) {
 	this.name = options.name;
 
 	this.storage = [];
@@ -25,12 +28,12 @@ Disk.prototype.create = function (options) {
 	return this;
 }
 
-Disk.prototype.getList = function () {
+Computer.Hardware.Disk.prototype.getList = function () {
 	var path = this.path.current;
 	return path;
 }
 
-Disk.prototype.open = function (pathName) {
+Computer.Hardware.Disk.prototype.open = function (pathName) {
 	if(pathName == '..' ) {
 		var oldFolder = this.path.current;
 		this.path.current = this.path.last[this.path.last.length-1];
@@ -65,24 +68,24 @@ Disk.prototype.open = function (pathName) {
 	}
 }
 
-Disk.prototype.buildName = function (object) {
+Computer.Hardware.Disk.prototype.buildName = function (object) {
 	if(object.hasOwnProperty('extension'))
 		return object.name + '.' + object.extension;
 	else 
 		return object.name;
 }
 
-Disk.prototype.setStorage = function (s) {
+Computer.Hardware.Disk.prototype.setStorage = function (s) {
 	this.storage = s;
 	this.path.current = this.storage[0];
 }
 
-Disk.prototype.mkdir = function (name) {
+Computer.Hardware.Disk.prototype.mkdir = function (name) {
 	this.path.current.children.push(new Folder({
 		name: name
 	}))
 }
 
-Disk.prototype.getStorage = function () {
+Computer.Hardware.Disk.prototype.getStorage = function () {
 	return this.storage
 }

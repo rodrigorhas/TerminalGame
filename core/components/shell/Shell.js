@@ -1,6 +1,6 @@
 function Shell (options){
 
-	this.id = Hash();
+	this.id = fn.Hash();
 
 	this.height = 440;
 	this.width = 645;
@@ -8,12 +8,12 @@ function Shell (options){
 	this._history = [];
 	this.currHistPos = -1;
 
-	this._autoComplete = new AutoComplete(window.cmd.system.disk);
+	this._autoComplete = new AutoComplete(Computer.System.disk);
 
 	this.output = new Output(this);
 
 	this.currentProgram = null;
-	this.theme = window.cmd.system.shellTheme;
+	this.theme = Computer.System.shellTheme;
 
 	for (var property in options) {
 		this[property] = options[property];
@@ -26,7 +26,7 @@ function Shell (options){
 				<div class="content">\
 					<div class="output"></div>\
 					<div class="inputRow">\
-						<span class="path">guest@localhost ~'+window.cmd.system.disk.path.name+' $</span>\
+						<span class="path">guest@localhost ~'+Computer.System.disk.path.name+' $</span>\
 						<div contenteditable="true" spellcheck="false" class="input" tabindex="2"></div>\
 					</div>\
 				</div>\

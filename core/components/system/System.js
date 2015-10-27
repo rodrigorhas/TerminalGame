@@ -1,23 +1,21 @@
-function System () {
-	this.logged = false;
-	//this.socketConnection = io.connect('http://127.0.0.1:8081');
-	this.socketConnection = io.connect('http://192.168.0.56:8081');
-	this.programs = {};
-	this.runningProcesses = {};
 
-	this.shellInstances = [];
+goog.provide('Computer.System');
 
-	this.firstLoginCall = 0;
-	this.shellTheme = (localStorage.getItem('cmd-c-t')) ? localStorage.getItem('cmd-c-t') : 'black';
-	this.Memory = null;
+Computer.System = {
+	logged: false,
+	//socketConnection: io.connect('http://127.0.0.1:8081'),
+	//socketConnection: io.connect('http://192.168.0.56:8081'),
+	programs: {},
+	runningProcesses: {},
 
-	this.init();
-}
+	shellInstances: [],
 
-System.prototype = {
+	firstLoginCall: 0,
+	shellTheme: (localStorage.getItem('cmd-c-t')) ? localStorage.getItem('cmd-c-t') : 'black',
+	Memory: null,
 
 	init: function () {
-		this.disk = new Disk().create({
+		this.disk = new Computer.Hardware.Disk().create({
 
 			expansion: 2,
 			name: 'C',
@@ -123,7 +121,9 @@ System.prototype = {
 
 }
 
-if(!window.cmd) window.cmd = {};
+Computer.System.init();
+
+/*if(!window.cmd) window.cmd = {};
 if(!window.cmd.system) window.cmd.system = new System();
 window.cmd.system.Memory = new Memory();
-window.cmd.system.Internet = new Internet();
+window.cmd.system.Internet = new Internet();*/
