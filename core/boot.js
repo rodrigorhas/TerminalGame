@@ -19,7 +19,8 @@ goog.addDependency('components/program/Program.js', ['Computer.System.Program'],
 
 goog.addDependency('components/shell/Output.js', ['Computer.System.Programs.Shell.Output'], []);
 goog.addDependency('components/shell/AutoComplete.js', ['Computer.System.Programs.Shell.AutoComplete'], []);
-goog.addDependency('components/shell/Shell.js', ['Computer.System.Programs.Shell'], ['Computer.System.Programs.Shell.AutoComplete', 'Computer.System.Programs.Shell.Output']);
+goog.addDependency('components/shell/Command.js', ['Computer.System.Programs.Shell.Command'], []);
+goog.addDependency('components/shell/Shell.js', ['Computer.System.Programs.Shell'], ['Computer.System.Programs.Shell.AutoComplete', 'Computer.System.Programs.Shell.Output', 'Computer.System.Programs.Shell.Command']);
 
 goog.addDependency('classes/Notify.js', ['Computer.System.Notify'], []);
 goog.addDependency('classes/Socket.js', ['Computer.System.Socket'], []);
