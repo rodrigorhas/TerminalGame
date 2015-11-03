@@ -1,188 +1,96 @@
 
-function Option (flags, description) {
-	this.flags = flags;
-	this.required = ~flags.indexOf('<');
-	this.optional = ~flags.indexOf('[');
-	this.bool = !~flags.indexOf('-no-');
-	flags = flags.split(/[ ,|]+/);
-	if (flags.length > 1 && !/^[[<]/.test(flags[1])) this.short = flags.shift();
-	this.long = flags.shift();
-	this.description = description || '';
-}
+function Command (command) {
+  this._name = null;
+  this.rawCommand = command;
+  this._description = null;
+  this._action = null;
+  this._args = [];
 
-Option.prototype = {
-	name: function () {
-		return this.long.replace(/(--|-)/, '');
-	}
-}
-
-function Command (name, s) {
-	this.commands = [];
-	this.options = [];
-	this._execs = {};
-	this._allowUnknownOption = false;
-	this._args = [];
-	this._name = name || '';
-
-	this._super = s;
+  this.parseExpectedArgs(command.split(/ +/g));
 }
 
 Command.prototype = {
-	name: function (name) {
-		this._name = name;
-		return this;
-	},
+  exec: function (args) {
+    this._action.apply(this, args);
+  },
 
-	alias: function (alias) {
-		if(!arguments.length) return this._alias;
-		this._alias = alias;
+  name: function (name) {
+    if(arguments.length == 0) return this._name;
+    this._name = name;
+    return this;
+  },
 
-		this._super.alias[alias] = this._name;
-		return this;
-	},
+  description: function (desc) {
+    if(arguments.length == 0) return this._description;
+    this._description = desc;
+    return this;
+  },
 
-	command: function (name, desc, opts) {
-		opts = opts || {};
+  action: function (fn) {
+    if(arguments.length == 0) return this._action;
+    this._action = fn;
+    return this;
+  },
 
-		var args = name.split('/ +/');
-		var cmd = new Command(args.shift());
+  parseExpectedArgs: function (args) {
+    var self = this;
 
-		if(desc) {
-			cmd.description(desc);
-			this.executables = true;
-			this._execs[cmd._name] = true;
-			if(opts.isdefault) this.defaultExecutable = cmd._name;
-		}
+    args.forEach(function (arg, index) {
+      var argDetails = {
+        required: false,
+        name: '',
+        variadic: false
+      };
 
-		cmd._noHelp = !!opts.noHelp;
-		this.commands.push(cmd);
-		cmd.parseExpectedArgs(args);
-		cmd.parent = this;
-	},
+      switch (arg[0]) {
+        case '<':
+          argDetails.required = true;
+          argDetails.name = arg.slice(1, -1);
+          break;
+        case '[':
+          argDetails.name = arg.slice(1, -1);
+          break;
+      }
 
-	addImplicitHelpCommand : function () {
-		this.command('help [cmd]', 'display help for [cmd]');
-	},
+      if (argDetails.name.length > 3 && argDetails.name.slice(-3) === '...') {
+        argDetails.variadic = true;
+        argDetails.name = argDetails.name.slice(0, -3);
+      }
+      if (argDetails.name) {
+        self._args.push(argDetails);
+      }
+    });
 
-	parseExpectedArgs: function(args) {
-		if (!args.length) return;
-  		var self = this;
-
-  		args.forEach(function(arg) {
-		    var argDetails = {
-		      required: false,
-		      name: '',
-		      variadic: false
-		    };
-
-		    switch (arg[0]) {
-		      case '<':
-		        argDetails.required = true;
-		        argDetails.name = arg.slice(1, -1);
-		        break;
-		      case '[':
-		        argDetails.name = arg.slice(1, -1);
-		        break;
-		    }
-
-		    if (argDetails.name.length > 3 && argDetails.name.slice(-3) === '...') {
-		      argDetails.variadic = true;
-		      argDetails.name = argDetails.name.slice(0, -3);
-		    }
-
-		    if (argDetails.name) {
-		      self._args.push(argDetails);
-		    }
-		});
-
-	  return this;
-	},
-
-	option: function (op, desc) {
-		this.options.push(new Option(op, desc));
-		return this;
-	},
-
-	exec: function ( args ) {
-		var self = this;
-		var res = {};
-
-		console.log(args);
-
-		if(args.length) {
-			args.forEach(function (arg, i) {
-				var argObj = self._args[i];
-				if(!argObj) {
-					self.options.forEach(function (opt) {
-						if(opt.long == arg) {
-							//console.log(arg ,opt);
-							var flagVal = args.slice(args.indexOf(arg)+1);
-							if(!opt.optional && !flagVal.length) {
-								console.log('missing '+ arg + ' value');
-							}
-
-							if(flagVal.length) {
-								
-								console.log(opt.flags.split('<').length);
-							}
-						}
-					});
-				}
-				else {
-
-					res[argObj.name] = arg;
-				}
-			});
-		}
-
-		else {
-			for (var i in this._args) {
-				var arg = this._args[i];
-				if(arg.required) {
-					return console.error('missing required argument %s', arg.name );
-				}
-			}
-		}
-
-		console.log(res);
-	}
+    console.log(this._args);
+  }
 }
 
 var Shell = {
-	commands: {},
-	alias: {},
+  commands: {},
 
-	addCommand: function ( name, pattern ) {
+  addCommand: function (cmd) {
+    var name = cmd.split(' ')[0],
+        command = new Command(cmd).name(name);
 
-		var command = new Command(name, this);
+    this.commands[name] = command;
+    return this.commands[name];
+  },
 
-		command.parseExpectedArgs(pattern.split(/ +/));
-
-		this.commands[name] = command;
-
-		return command;
-	},
-
-	input: function ( c ) {
-		var words = c.split(/ +/);
-		var name = words[0];
-
-		var c = this.commands[name];
-
-		if(this.commands[name])
-			c = this.commands[name];
-
-		else if (this.alias[name] && this.commands[this.alias[name]])
-			c = this.commands[this.alias[name]];
-		else
-			return console.error('%s: Command not found', name);
-
-		c.exec(words.slice(1));
-	}
+  input: function (input) {
+    var args = input.split(/\s+/g);
+    var command = args[0];
+    
+    if(this.commands[command]) {
+      this.commands[command].exec(args.slice(1));
+    }
+  }
 }
 
-var c = Shell.addCommand('ping', '<target>')
-	.option('-p <port>, --port <port>', 'Set the port to ping')
-	.option('-ps <packetSize>', 'Set the port to ping');
+Shell
+  .addCommand('login <username>')
+  .description('Login in your account')
+  .action(function (username) {
+    console.log('loggin with %s', username);
+  });
 
-Shell.input('ping 192.168.0.56 -ps 50');
+var output = Shell.input('login rodrigorhas');

@@ -4,20 +4,30 @@ function Output (shell) {
 }
 
 Output.prototype = {
-	print: function (command, printPath) {
-		var line = $('<div class="outputRow"><span class="command"></span></div>');
-		var c = line.children('.command');
+	print: function (input, printPath) {
+		var outputContainer = this.shell._output,
+		$this = this;
 
-		if(printPath) {
-			var pc = this.shell._dom.find('.inputRow .path').clone();
-			line.prepend(pc);
-		} else {
-			c.addClass('sys_out');
+		if(!fn.isArray(input)) {
+			input = [input];
 		}
 
-		c.append(command);
+		input.forEach(function (command, index) {
+			var line = $('<div class="outputRow"><span class="command"></span></div>');
+			var commandNode = line.children('.command');
 
-		this.shell._dom.find('.output').append(line);
+			if(printPath) {
+				var pc = $this.shell.clonePath();
+				line.prepend(pc);
+			} else {
+				commandNode.addClass('sys_out');
+			}
+
+			commandNode.append(command);
+
+			outputContainer.append(line);
+		});
+
 		this.scrollToBottom();
 	},
 
@@ -73,7 +83,7 @@ Output.prototype = {
 	},
 
 	list: function (list, all) {
-		if(!isset(list)) return console.error('missing list')
+		if(!list) return console.error('missing list')
 		var line = $('<div class="outputRow"><div class="list"></div></div>');
 
 		var items = list.children;

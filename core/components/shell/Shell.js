@@ -1,4 +1,6 @@
 
+goog.provide('Computer.System.Programs');
+
 Computer.System.Programs.Shell = function (options){
 
 	this.id = fn.Hash();
@@ -37,6 +39,7 @@ Computer.System.Programs.Shell = function (options){
 
 	this._dom.attr('id', this.id);
 	// set input dom
+	this._output = this._dom.find('.output');
 	this._input = this._dom.find('.inputRow .input');
 	this._path = this._dom.find('.inputRow .path');
 	this._content = this._dom.find('.content');
@@ -374,7 +377,8 @@ Computer.System.Programs.Shell.prototype = {
 				break;
 
 			case 'ls':
-				var list = window.cmd.system.disk.getList();
+				var list = Computer.System.disk.getList();
+				console.log(list);
 				if(c[1] && c[1] == '-a') {
 					this.output.list(list, true);
 				} else {
@@ -531,7 +535,7 @@ Computer.System.Programs.Shell.prototype = {
 			this.focusInput();
 		}
 
-		if(isset(this._history[this.currHistPos + 1])){
+		if(this._history[this.currHistPos + 1]){
 			var pos = ++this.currHistPos;
 			var cm = this._history[pos];
 			if(cm) {
@@ -542,7 +546,7 @@ Computer.System.Programs.Shell.prototype = {
 	},
 
 	historyDown: function () {
-		if(isset(this._history[this.currHistPos + -1])){
+		if(this._history[this.currHistPos + -1]){
 			var pos = --this.currHistPos;
 			var cm = this._history[pos];
 			if(cm) {
@@ -592,5 +596,9 @@ Computer.System.Programs.Shell.prototype = {
 	useRunningProcess: function (name) {
 		var program = window.cmd.system.getProgram(name);
 		return program;
+	},
+
+	clonePath: function () {
+		return this._path.clone();
 	}
 }

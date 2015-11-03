@@ -8,6 +8,7 @@ goog.provide('Computer.Hardware');
  * Map goog dependencies
  */
 goog.addDependency('lib/Event.js', ['Event'], []);
+goog.addDependency('lib/EventEmitter.js', ['EventEmitter'], []);
 goog.addDependency('lib/jquery.js', ['jquery'], []);
 goog.addDependency('lib/jquery-ui.js', ['jquery-ui'], ['jquery']);
 goog.addDependency('classes/fn.js', ['fn'], []);
@@ -31,6 +32,7 @@ goog.addDependency('components/hardware/Memory.js', ['Computer.Hardware.Memory']
 
 goog.require('fn');
 goog.require('Event');
+goog.require('EventEmitter');
 goog.require('jquery-ui');
 goog.require('Computer.System');
 goog.require('Computer.System.Programs.Shell');
