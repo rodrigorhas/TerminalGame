@@ -312,7 +312,6 @@ Computer.System.Programs.Shell.prototype = {
 		}, 200, function () {
 			dom.addClass('minimized');
 		});
-
 	},
 
 	restore: function () {
@@ -329,7 +328,6 @@ Computer.System.Programs.Shell.prototype = {
 			top: def.top,
 			opacity: 1
 		}, 250);
-
 	},
 
 	getInput: function () {
@@ -354,7 +352,6 @@ Computer.System.Programs.Shell.prototype = {
 			case 13:
 				e.preventDefault();
 				var cm = this._input.text();
-				console.log(cm);
 				if(cm.length) this.input(cm);
 				break;
 

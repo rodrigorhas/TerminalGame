@@ -405,9 +405,6 @@ Command.prototype.allowUnknownOption = function(arg) {
  */
 
 Command.prototype.parse = function(argv) {
-  // implicit help
-  if (this.executables) this.addImplicitHelpCommand();
-
   // store raw args
   this.rawArgs = argv;
 
