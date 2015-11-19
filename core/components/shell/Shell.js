@@ -5,6 +5,8 @@ Computer.System.Programs.Shell = function (options){
 
 	this.id = fn.Hash();
 
+	this.commands = {};
+
 	this.height = 440;
 	this.width = 645;
 
@@ -48,6 +50,69 @@ Computer.System.Programs.Shell = function (options){
 }
 
 Computer.System.Programs.Shell.prototype = {
+
+	runningCommand: null,
+
+	_ShellCommand:function  (command) {
+		this.children = {};
+		this.command = command;
+	},
+
+	construct: function (object, namespace, createLevelCallback) {
+		namespace = namespace.split('.');
+		var current;
+
+		var createLevel = function (name, level) {
+			createLevelCallback(name, level);
+			current = level[name];
+		}
+
+		namespace.forEach(function (name) {
+			if(current) {
+				if(current[name]) current = current[name];
+				else createLevel(name, current);
+			}
+
+			else if(object[name]) current = object[name];
+			else createLevel(name, object);
+		});
+	},
+
+	addCommand: function (name, command) {
+
+		var self = this;
+
+		command.setShell(this);
+
+		if(name.split('.')) {
+			this.construct(this.commands, name, function (name, level) {
+				var object;
+
+				if(level.children) object = level.children;
+				else object = level;
+
+				object[name] = new self._ShellCommand(command);
+			});
+		}
+
+		else {
+			this.commands[name] = new self._ShellCommand(command);
+		}
+	},
+
+	input: function ( string ) {
+		if(this.runningCommand)
+			this.runningCommand = null;
+
+		this.output.print(string, true);
+
+		var words = string.split(/\s+/g);
+		var command = words[0];
+		if(!this.commands[command]) console.error('command not found -> ' + command);
+		this.commands[command].command.parse(words.slice(1));
+
+		this.clearInput();
+	},
 
 	close: function () {
 		this._dom.remove();
@@ -289,7 +354,8 @@ Computer.System.Programs.Shell.prototype = {
 			case 13:
 				e.preventDefault();
 				var cm = this._input.text();
-				if(cm.length) this.enterCommand(cm);
+				console.log(cm);
+				if(cm.length) this.input(cm);
 				break;
 
 			// KEY UP
@@ -315,34 +381,12 @@ Computer.System.Programs.Shell.prototype = {
 		}
 	},
 
-	enterCommand: function (command) {
+	/*enterCommand: function (command) {
 		this.currHistPos = 0;
 		this.hus = false;
 		this.clearInput();
 		this.saveCommand(command);
 		this.output.print(command, true);
-
-		/*function Command (name) {
-			this._args = [];
-			this.commands = [];
-			this.options = [];
-			this._name = name
-		}*/
-
-		/*var input = command;
-
-		var wordOnly = /([^-\s|\d]\w+)/g;
-		var numberOnly = /([^-\s]\d+)/g;
-		var betweenQuotes = /"(.*?)"/g;
-		var simpleParams = /(-\w+?)/g;
-		var complexParams = /(-\w+)/g;
-		//var pathPattern = "";
-
-		var matches = input.match(simpleParams);
-
-		console.log(matches);
-
-		return this.output.clear();*/
 
 		var c = command.split(' ');
 		
@@ -517,7 +561,7 @@ Computer.System.Programs.Shell.prototype = {
 				this.output.error('Command not found: ' + command);
 		}
 
-	},
+	},*/
 
 	saveCommand: function (command) {
 		this._history.unshift(command);

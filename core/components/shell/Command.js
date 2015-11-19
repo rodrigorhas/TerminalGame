@@ -134,7 +134,6 @@ Command.prototype.command = function(name, desc, opts) {
 	cmd.description(desc);
 	this.executables = true;
 	this._execs[cmd._name] = true;
-	if (opts.isDefault) this.defaultExecutable = cmd._name;
   }
 
   cmd._noHelp = !!opts.noHelp;
@@ -416,13 +415,13 @@ Command.prototype.parse = function(argv) {
   this._name = this._name;
 
   // github-style sub-commands with no sub-command
-  if (this.executables && argv.length < 3 && !this.defaultExecutable) {
+  if (this.executables && argv.length < 2 && argv.indexOf('--help') == -1) {
 	// this user needs help
 	argv.push('--help');
   }
 
   // process argv
-  var parsed = this.parseOptions(this.normalize(argv.slice(2)));
+  var parsed = this.parseOptions(this.normalize(argv));
   var args = this.args = parsed.args;
 
   var result = this.parseArgs(this.args, parsed.unknown);
@@ -431,14 +430,15 @@ Command.prototype.parse = function(argv) {
   var name = result.args[0];
   if (this._execs[name] && typeof this._execs[name] != "function") {
 	return this.executeSubCommand(argv, args, parsed.unknown);
-  } else if (this.defaultExecutable) {
-	// use the default subcommand
-	args.unshift(name = this.defaultExecutable);
-	return this.executeSubCommand(argv, args, parsed.unknown);
   }
 
   return result;
 };
+
+Command.prototype.setShell = function ( instance ) {
+	if(!instance) throw "missing instance name - Command::setShell"
+	this.Shell = instance;
+}
 
 /**
  * Execute a sub-command executable.
@@ -453,74 +453,31 @@ Command.prototype.executeSubCommand = function(argv, args, unknown) {
   args = args.concat(unknown);
 
   if (!args.length) this.help();
-  if ('help' == args[0] && 1 == args.length) this.help();
-
-  // <cmd> --help
-  if ('help' == args[0]) {
-	args[0] = args[1];
-	args[1] = '--help';
-  }
+  if ('--help' == args[0] && 1 == args.length) return this.help();
 
   // executable
-  var f = argv[1];
-  // name of the subcommand, link `pm-install`
-  var bin = basename(f, '.js') + '-' + args[0];
-
-
-  // In case of globally installed, get the base dir where executable
-  //  subcommand file should be located at
-  var baseDir
-	, link = readlink(f);
-
-  // when symbolink is relative path
-  if (link !== f && link.charAt(0) !== '/') {
-	link = path.join(dirname(f), link)
-  }
-  baseDir = dirname(link);
-
-  // prefer local `./<bin>` to bin in the $PATH
-  var localBin = path.join(baseDir, bin);
-
-  // whether bin file is a js script with explicit `.js` extension
-  var isExplicitJS = false;
-  if (exists(localBin + '.js')) {
-	bin = localBin + '.js';
-	isExplicitJS = true;
-  } else if (exists(localBin)) {
-	bin = localBin;
-  }
-
+  var cmdName = args[0];
   args = args.slice(1);
 
   var proc;
-  if (process.platform !== 'win32') {
-	if (isExplicitJS) {
-	  args.unshift(localBin);
-	  // add executable arguments to spawn
-	  args = (process.execArgv || []).concat(args);
 
-	  proc = spawn('node', args, { stdio: 'inherit', customFds: [0, 1, 2] });
-	} else {
-	  proc = spawn(bin, args, { stdio: 'inherit', customFds: [0, 1, 2] });
-	}
-  } else {
-	args.unshift(localBin);
-	proc = spawn(process.execPath, args, { stdio: 'inherit'});
+  if(this.Shell.runningCommand) {
+  	var parent = this.Shell.runningCommand;
+  	parent.command.parse(args);
   }
 
-  proc.on('close', process.exit.bind(process));
-  proc.on('error', function(err) {
-	if (err.code == "ENOENT") {
-	  console.error('\n  %s(1) does not exist, try --help\n', bin);
-	} else if (err.code == "EACCES") {
-	  console.error('\n  %s(1) not executable. try chmod or run with root\n', bin);
-	}
-	//process.exit(1);
-	console.info(' Shell output implementation ');
-  });
+  else {
+  	var parent = this.Shell.commands[this._name];
+  	var cmd = parent.children[cmdName];
+  	if(cmd) {
+  		cmd.command.parse(args);
+  		this.Shell.runningCommand = cmd;
+  	}
 
-  // Store the reference to the child process
-  this.runningCommand = proc;
+  	else {
+  		console.error('Command not found -> ' + cmdName)
+  	}
+  }
 };
 
 /**
@@ -592,9 +549,10 @@ Command.prototype.parseArgs = function(args, unknown) {
 
 	// If there were no args and we have unknown options,
 	// then they are extraneous and we need to error.
-	if (unknown.length > 0) {
+	/*if (unknown.length > 0) {
+		console.log(unknown);
 	  this.unknownOption(unknown[0]);
-	}
+	}*/
   }
 
   return this;
@@ -1056,9 +1014,8 @@ function outputHelpIfNecessary(cmd, options) {
   options = options || [];
   for (var i = 0; i < options.length; i++) {
 	if (options[i] == '--help' || options[i] == '-h') {
-	  cmd.outputHelp();
-	  //process.exit(0);
-	  console.info(' Shell output implementation ');
+	  var help = cmd.outputHelp();
+	  window.shell.output.print(help.split(/\n/))
 	}
   }
 }
@@ -1090,59 +1047,21 @@ function exists(file) {
   }
 }
 
-var git = new Command();
+/*var git = new Command('git');
  
 git
-  .version('0.0.1')
-  .command('install [name]', 'install one or more packages')
-  .command('search [query]', 'search with optional query')
-  .command('list', 'list packages installed', {isDefault: true})
+	.command('install [name]', 'install one or more packages')
+	.command('search [query]', 'search with optional query')
+	.command('list', 'list packages installed', {isDefault: true});
 
-var Shell = {
-	construct: function (object, namespace, createLevelCallback) {
-		namespace = namespace.split('.');
-		var current;
+var git_install = new Command('install');
+ 
+git_install
+	.arguments('[name]')
+	.action(function (name) {
+		if(!name) window.shell.output.print('missing package name');
+		window.shell.output.print('installing package: ' + name);
+	});
 
-		var createLevel = function (name, level) {
-			createLevelCallback(name, level);
-			current = level[name];
-		}
-
-		namespace.forEach(function (name) {
-			if(current) {
-				if(current[name]) current = current[name];
-				else createLevel(name, current);
-			}
-
-			else if(object[name]) current = object[name];
-			else createLevel(name, object);
-		});
-	},
-
-	addCommand: function (name, command) {
-
-		if(name.split('.')) {
-			this.construct(this.commands, name, function (name, level) {
-				var object;
-
-				if(level.children) object = level.children;
-				else object = level;
-
-				object[name] = new ShellCommand(command);
-			});
-		}
-
-		else {
-			this.commands[name] = new ShellCommand(command);
-		}
-	},
-	commands: {}
-}
-
-Shell.addCommand('git', git);
-Shell.addCommand('git.install', 'git_install');
-
-function ShellCommand (command) {
-	this.children = {};
-	this.command = command;
-}
+shell.addCommand('git', git);
+shell.addCommand('git.install', git_install);*/
