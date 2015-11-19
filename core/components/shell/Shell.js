@@ -47,15 +47,50 @@ Computer.System.Programs.Shell = function (options){
 	this._content = this._dom.find('.content');
 
 	this.prepareAll();
+	this._initCommands();
 }
 
 Computer.System.Programs.Shell.prototype = {
 
 	runningCommand: null,
 
+	_initCommands: function () {
+		var self = this;
+
+		var git = new Command('git')
+			.command('install [name]', 'install one or more packages')
+			.command('search [query]', 'search with optional query')
+			.command('list', 'list packages installed', {isDefault: true});
+
+		var git_install = new Command('install')
+			.arguments('[name]')
+			.action(function (name) {
+				if(!name) self.output.print('missing package name');
+				self.output.print('installing package: ' + name);
+			});
+
+		var clear = function () {
+			self.output.clear()
+		}
+
+		this.addCommand('clear', clear, true);
+		this.addCommand('git', git);
+		this.addCommand('git.install', git_install);
+	},
+
 	_ShellCommand:function  (command) {
 		this.children = {};
 		this.command = command;
+	},
+
+	_SimpleShellCommand:function  (fn) {
+		this.command = {
+			_action: fn,
+
+			parse: function () {
+				this._action();
+			}
+		}
 	},
 
 	construct: function (object, namespace, createLevelCallback) {
@@ -78,11 +113,12 @@ Computer.System.Programs.Shell.prototype = {
 		});
 	},
 
-	addCommand: function (name, command) {
+	addCommand: function (name, command, simple) {
 
 		var self = this;
 
-		command.setShell(this);
+		if(!simple)
+			command.setShell(this);
 
 		if(name.split('.')) {
 			this.construct(this.commands, name, function (name, level) {
@@ -91,7 +127,11 @@ Computer.System.Programs.Shell.prototype = {
 				if(level.children) object = level.children;
 				else object = level;
 
-				object[name] = new self._ShellCommand(command);
+				var type = '_ShellCommand';
+
+				if(simple) type = '_SimpleShellCommand';
+
+				object[name] = new self[type](command);
 			});
 		}
 
@@ -101,17 +141,25 @@ Computer.System.Programs.Shell.prototype = {
 	},
 
 	input: function ( string ) {
+
+		this.currHistPos = 0;
+		this.hus = false;
+		this.clearInput();
+		this.saveCommand(string);
+		this.output.print(string, true);
+
 		if(this.runningCommand)
 			this.runningCommand = null;
 
-		this.output.print(string, true);
-
 		var words = string.split(/\s+/g);
 		var command = words[0];
-		if(!this.commands[command]) console.error('command not found -> ' + command);
-		this.commands[command].command.parse(words.slice(1));
 
-		this.clearInput();
+		if(!this.commands[command]) {
+			this.output.error('No command \''+ command +'\' found')
+			return;
+		}
+
+		this.commands[command].command.parse(words.slice(1));
 	},
 
 	close: function () {
@@ -357,6 +405,7 @@ Computer.System.Programs.Shell.prototype = {
 
 			// KEY UP
 			case 38:
+				e.preventDefault();
 				this.historyUp();
 				break;
 

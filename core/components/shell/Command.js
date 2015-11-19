@@ -1043,22 +1043,3 @@ function exists(file) {
 	return false;
   }
 }
-
-/*var git = new Command('git');
- 
-git
-	.command('install [name]', 'install one or more packages')
-	.command('search [query]', 'search with optional query')
-	.command('list', 'list packages installed', {isDefault: true});
-
-var git_install = new Command('install');
- 
-git_install
-	.arguments('[name]')
-	.action(function (name) {
-		if(!name) window.shell.output.print('missing package name');
-		window.shell.output.print('installing package: ' + name);
-	});
-
-shell.addCommand('git', git);
-shell.addCommand('git.install', git_install);*/
