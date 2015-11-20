@@ -52,7 +52,10 @@ Computer.System.Programs.Shell = function (options){
 
 Computer.System.Programs.Shell.prototype = {
 
-	runningCommand: null,
+	runningCommand: {
+		parent  : null,
+		current : null
+	},
 
 	_initCommands: function () {
 		var self = this;
@@ -60,14 +63,20 @@ Computer.System.Programs.Shell.prototype = {
 		var git = new Command('git')
 			.command('install [name]', 'install one or more packages')
 			.command('search [query]', 'search with optional query')
-			.command('list', 'list packages installed', {isDefault: true});
+			.command('list', 'list packages installed', {isDefault: true})
+			.finish(function () {
+				console.log('git finish');
+			})
 
 		var git_install = new Command('install')
 			.arguments('[name]')
 			.action(function (name) {
 				if(!name) self.output.print('missing package name');
 				self.output.print('installing package: ' + name);
-			});
+			})
+			.finish(function () {
+				console.log('install ifnish');
+			})
 
 		var clear = function () {
 			self.output.clear();
@@ -158,7 +167,7 @@ Computer.System.Programs.Shell.prototype = {
 		this.output.print(string, true);
 
 		if(this.runningCommand)
-			this.runningCommand = null;
+			this.runningCommand = {parent: null,  current: null};
 
 		var words = string.split(/\s+/g);
 		var command = words[0];

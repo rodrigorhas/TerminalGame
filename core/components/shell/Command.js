@@ -444,8 +444,20 @@ if ('boolean' == typeof self[name] || 'undefined' == typeof self[name]) {
 
   // executable sub-commands
   var name = result.args[0];
+
+  var rc = this.Shell.runningCommand;
+
   if (this._execs[name] && typeof this._execs[name] != "function") {
+  	if(!rc.parent)
+  		rc.parent = this;
   	return this.executeSubCommand(argv, args, parsed.unknown);
+  }
+  
+  // dont have sub-commands
+  else if(rc.parent) {
+  	if(rc.parent._name != this._name)
+  		rc.parent.emit('finish');
+  	this.emit('finish');
   }
 
   else this.emit('finish');
@@ -479,9 +491,10 @@ Command.prototype.setShell = function ( instance ) {
 
   var proc;
 
-  if(this.Shell.runningCommand) {
-  	var parent = this.Shell.runningCommand;
-  	parent.command.parse(args);
+  if(this.Shell.runningCommand.current) {
+  	var parentOfThis = this.Shell.runningCommand.current;
+  	console.log(parentOfThis);
+  	parentOfThis.command.parse(args);
   }
 
   else {
@@ -489,11 +502,11 @@ Command.prototype.setShell = function ( instance ) {
   	var cmd = parent.children[cmdName];
   	if(cmd) {
   		cmd.command.parse(args);
-  		this.Shell.runningCommand = cmd;
+  		this.Shell.runningCommand.current = cmd;
   	}
 
   	else {
-  		console.error('Command not found -> ' + cmdName)
+  		this.Shell.output.error('No command \''+ cmdName +'\' found');
   	}
   }
 };
