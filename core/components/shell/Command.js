@@ -734,11 +734,11 @@ return { args: args, unknown: unknownOptions };
  */
 
  Command.prototype.missingArgument = function(name) {
- 	console.error();
- 	console.error("  error: missing required argument `%s'", name);
- 	console.error();
- 	console.info(' Shell output implementation ')
-  //process.exit(1);
+ 	this.Shell.output.error([
+ 		'',
+ 		'  error: missing required argument \'' + name + '\'',
+ 		'',
+ 	])
 };
 
 /**
@@ -750,13 +750,19 @@ return { args: args, unknown: unknownOptions };
  */
 
  Command.prototype.optionMissingArgument = function(option, flag) {
- 	console.error();
+ 	var message;
+
  	if (flag) {
- 		console.error("  error: option `%s' argument missing, got `%s'", option.flags, flag);
+ 		message = "error: option '"+ option.flags +"' argument missing, got '"+ flags +"'";
  	} else {
- 		console.error("  error: option `%s' argument missing", option.flags);
+ 		message = "error: option '"+ option.flags +"' argument missing";
  	}
- 	console.info(' Shell output implementation ');
+
+ 	this.Shell.output.error([
+ 		'',
+ 		message,
+ 		'',
+ 	])
   //process.exit(1);
 };
 
@@ -785,11 +791,11 @@ return { args: args, unknown: unknownOptions };
  */
 
  Command.prototype.variadicArgNotLast = function(name) {
- 	console.error();
- 	console.error("  error: variadic arguments must be last `%s'", name);
- 	console.error();
-  //process.exit(1);
-  console.info(' Shell output implementation ')
+ 	this.Shell.output.error([
+ 		'',
+ 		"error: variadic arguments must be last '"+name+"'",
+ 		''
+ 	]);
 };
 
 /**
@@ -809,11 +815,13 @@ return { args: args, unknown: unknownOptions };
  	this._version = str;
  	flags = flags || '-V, --version';
  	this.option(flags, 'output the version number');
+
+ 	var self = this;
  	this.on('version', function() {
- 		process.stdout.write(str + '\n');
-	//process.exit(0);
-	console.info(' Shell output implementation ');
-});
+ 		
+ 		self.Shell.output.print(str);
+
+	});
  	return this;
  };
 
@@ -1027,8 +1035,6 @@ return { args: args, unknown: unknownOptions };
 
  Command.prototype.help = function(cb) {
  	this.outputHelp(cb);
-  //process.exit();
-  console.info(' Shell output implementation ');
 };
 
 /**
@@ -1072,7 +1078,7 @@ return { args: args, unknown: unknownOptions };
  	for (var i = 0; i < options.length; i++) {
  		if (options[i] == '--help' || options[i] == '-h') {
  			var help = cmd.outputHelp();
- 			window.shell.output.print(help.split(/\n/))
+ 			cmd.Shell.output.print(help.split(/\n/));
  		}
  	}
  }
@@ -1092,14 +1098,3 @@ return { args: args, unknown: unknownOptions };
  	? '<' + nameOutput + '>'
  	: '[' + nameOutput + ']'
  }
-
-// for versions before node v0.8 when there weren't `fs.existsSync`
-function exists(file) {
-	try {
-		if (fs.statSync(file).isFile()) {
-			return true;
-		}
-	} catch (e) {
-		return false;
-	}
-}
