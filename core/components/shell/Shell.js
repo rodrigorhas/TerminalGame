@@ -70,12 +70,21 @@ Computer.System.Programs.Shell.prototype = {
 			});
 
 		var clear = function () {
-			self.output.clear()
+			self.output.clear();
 		}
 
-		this.addCommand('clear', clear, true);
+		var ls = new Command('')
+			.command('ls')
+			.description('list the current directory')
+			.option('-l', 'list one below other')
+			.finish(function () {
+				console.log(this);
+			});
+
 		this.addCommand('git', git);
 		this.addCommand('git.install', git_install);
+		this.addCommand('clear', clear, true);
+		this.addCommand('ls', ls);
 	},
 
 	_ShellCommand:function  (command) {

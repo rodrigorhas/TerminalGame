@@ -6,16 +6,16 @@
  * @api public
  */
 
-function Option(flags, description) {
-  this.flags = flags;
-  this.required = ~flags.indexOf('<');
-  this.optional = ~flags.indexOf('[');
-  this.bool = !~flags.indexOf('-no-');
-  flags = flags.split(/[ ,|]+/);
-  if (flags.length > 1 && !/^[[<]/.test(flags[1])) this.short = flags.shift();
-  this.long = flags.shift();
-  this.description = description || '';
-}
+ function Option(flags, description) {
+ 	this.flags = flags;
+ 	this.required = ~flags.indexOf('<');
+ 	this.optional = ~flags.indexOf('[');
+ 	this.bool = !~flags.indexOf('-no-');
+ 	flags = flags.split(/[ ,|]+/);
+ 	if (flags.length > 1 && !/^[[<]/.test(flags[1])) this.short = flags.shift();
+ 	this.long = flags.shift();
+ 	this.description = description || '';
+ }
 
 /**
  * Return option name.
@@ -24,11 +24,11 @@ function Option(flags, description) {
  * @api private
  */
 
-Option.prototype.name = function() {
-  return this.long
-	.replace('--', '')
-	.replace('no-', '');
-};
+ Option.prototype.name = function() {
+ 	return this.long
+ 	.replace('--', '')
+ 	.replace('no-', '');
+ };
 
 /**
  * Check if `arg` matches the short or long flag.
@@ -38,9 +38,9 @@ Option.prototype.name = function() {
  * @api private
  */
 
-Option.prototype.is = function(arg) {
-  return arg == this.short || arg == this.long;
-};
+ Option.prototype.is = function(arg) {
+ 	return arg == this.short || arg == this.long;
+ };
 
 /**
  * Initialize a new `Command`.
@@ -49,20 +49,26 @@ Option.prototype.is = function(arg) {
  * @api public
  */
 
-function Command(name) {
-  this.commands = [];
-  this.options = [];
-  this._execs = {};
-  this._allowUnknownOption = false;
-  this._args = [];
-  this._name = name || '';
-}
+ function Command(name) {
+ 	this._name    = name || '';
+ 	this._args    = [];
+ 	this._execs   = {};
+ 	this.options  = [];
+ 	this.commands = [];
+ 	this.onFinish = function () {};
+ 	this._allowUnknownOption = false;
+
+ 	var self = this;
+ 	this.on('finish', function () {
+ 		self.onFinish.bind(self)();
+ 	});
+ }
 
 /**
  * Inherit from `EventEmitter.prototype`.
  */
 
-Command.prototype.__proto__ = EventEmitter.prototype;
+ Command.prototype.__proto__ = EventEmitter.prototype;
 
 /**
  * Add command `name`.
@@ -125,25 +131,25 @@ Command.prototype.__proto__ = EventEmitter.prototype;
  * @api public
  */
 
-Command.prototype.command = function(name, desc, opts) {
-  opts = opts || {};
-  var args = name.split(/ +/);
-  var cmd = new Command(args.shift());
+ Command.prototype.command = function(name, desc, opts) {
+ 	opts = opts || {};
+ 	var args = name.split(/ +/);
+ 	var cmd = new Command(args.shift());
 
-  if (desc) {
-	cmd.description(desc);
-	this.executables = true;
-	this._execs[cmd._name] = true;
-  }
+ 	if (desc) {
+ 		cmd.description(desc);
+ 		this.executables = true;
+ 		this._execs[cmd._name] = true;
+ 	}
 
-  cmd._noHelp = !!opts.noHelp;
-  this.commands.push(cmd);
-  cmd.parseExpectedArgs(args);
-  cmd.parent = this;
+ 	cmd._noHelp = !!opts.noHelp;
+ 	this.commands.push(cmd);
+ 	cmd.parseExpectedArgs(args);
+ 	cmd.parent = this;
 
-  if (desc) return this;
-  return cmd;
-};
+ 	if (desc) return this;
+ 	return cmd;
+ };
 
 /**
  * Define argument syntax for the top-level command.
@@ -151,9 +157,22 @@ Command.prototype.command = function(name, desc, opts) {
  * @api public
  */
 
-Command.prototype.arguments = function (desc) {
-  return this.parseExpectedArgs(desc.split(/ +/));
-};
+ Command.prototype.arguments = function (desc) {
+ 	return this.parseExpectedArgs(desc.split(/ +/));
+ };
+
+/**
+ * Define the finish command callback function
+ *
+ * @api public
+ */
+
+ Command.prototype.finish = function (fn) {
+ 	if(!fn) throw "Missing finish function";
+ 	this.onFinish = fn;
+ 	return this;
+ };
+
 
 /**
  * Add an implicit `help [cmd]` subcommand
@@ -162,9 +181,9 @@ Command.prototype.arguments = function (desc) {
  * @api private
  */
 
-Command.prototype.addImplicitHelpCommand = function() {
-  this.command('help [cmd]', 'display help for [cmd]');
-};
+ Command.prototype.addImplicitHelpCommand = function() {
+ 	this.command('help [cmd]', 'display help for [cmd]');
+ };
 
 /**
  * Parse expected `args`.
@@ -176,36 +195,36 @@ Command.prototype.addImplicitHelpCommand = function() {
  * @api public
  */
 
-Command.prototype.parseExpectedArgs = function(args) {
-  if (!args.length) return;
-  var self = this;
-  args.forEach(function(arg) {
-	var argDetails = {
-	  required: false,
-	  name: '',
-	  variadic: false
-	};
+ Command.prototype.parseExpectedArgs = function(args) {
+ 	if (!args.length) return;
+ 	var self = this;
+ 	args.forEach(function(arg) {
+ 		var argDetails = {
+ 			required: false,
+ 			name: '',
+ 			variadic: false
+ 		};
 
-	switch (arg[0]) {
-	  case '<':
-		argDetails.required = true;
-		argDetails.name = arg.slice(1, -1);
-		break;
-	  case '[':
-		argDetails.name = arg.slice(1, -1);
-		break;
-	}
+ 		switch (arg[0]) {
+ 			case '<':
+ 			argDetails.required = true;
+ 			argDetails.name = arg.slice(1, -1);
+ 			break;
+ 			case '[':
+ 			argDetails.name = arg.slice(1, -1);
+ 			break;
+ 		}
 
-	if (argDetails.name.length > 3 && argDetails.name.slice(-3) === '...') {
-	  argDetails.variadic = true;
-	  argDetails.name = argDetails.name.slice(0, -3);
-	}
-	if (argDetails.name) {
-	  self._args.push(argDetails);
-	}
-  });
-  return this;
-};
+ 		if (argDetails.name.length > 3 && argDetails.name.slice(-3) === '...') {
+ 			argDetails.variadic = true;
+ 			argDetails.name = argDetails.name.slice(0, -3);
+ 		}
+ 		if (argDetails.name) {
+ 			self._args.push(argDetails);
+ 		}
+ 	});
+ 	return this;
+ };
 
 /**
  * Register callback `fn` for the command.
@@ -224,9 +243,9 @@ Command.prototype.parseExpectedArgs = function(args) {
  * @api public
  */
 
-Command.prototype.action = function(fn) {
-  var self = this;
-  var listener = function(args, unknown) {
+ Command.prototype.action = function(fn) {
+ 	var self = this;
+ 	var listener = function(args, unknown) {
 	// Parse any so-far unknown options
 	args = args || [];
 	unknown = unknown || [];
@@ -240,40 +259,40 @@ Command.prototype.action = function(fn) {
 	// die, unless someone asked for help, in which case we give it
 	// to them, and then we die.
 	if (parsed.unknown.length > 0) {
-	  self.unknownOption(parsed.unknown[0]);
+		self.unknownOption(parsed.unknown[0]);
 	}
 
 	// Leftover arguments need to be pushed back. Fixes issue #56
 	if (parsed.args.length) args = parsed.args.concat(args);
 
 	self._args.forEach(function(arg, i) {
-	  if (arg.required && null == args[i]) {
-		self.missingArgument(arg.name);
-	  } else if (arg.variadic) {
-		if (i !== self._args.length - 1) {
-		  self.variadicArgNotLast(arg.name);
-		}
+		if (arg.required && null == args[i]) {
+			self.missingArgument(arg.name);
+		} else if (arg.variadic) {
+			if (i !== self._args.length - 1) {
+				self.variadicArgNotLast(arg.name);
+			}
 
-		args[i] = args.splice(i);
-	  }
+			args[i] = args.splice(i);
+		}
 	});
 
 	// Always append ourselves to the end of the arguments,
 	// to make sure we match the number of arguments the user
 	// expects
 	if (self._args.length) {
-	  args[self._args.length] = self;
+		args[self._args.length] = self;
 	} else {
-	  args.push(self);
+		args.push(self);
 	}
 
 	fn.apply(self, args);
-  };
-  var parent = this.parent || this;
-  var name = parent === this ? '*' : this._name;
-  parent.on(name, listener);
-  if (this._alias) parent.on(this._alias, listener);
-  return this;
+};
+var parent = this.parent || this;
+var name = parent === this ? '*' : this._name;
+parent.on(name, listener);
+if (this._alias) parent.on(this._alias, listener);
+return this;
 };
 
 /**
@@ -325,25 +344,25 @@ Command.prototype.action = function(fn) {
  * @api public
  */
 
-Command.prototype.option = function(flags, description, fn, defaultValue) {
-  var self = this
-	, option = new Option(flags, description)
-	, oname = option.name()
-	, name = camelcase(oname);
+ Command.prototype.option = function(flags, description, fn, defaultValue) {
+ 	var self = this
+ 	, option = new Option(flags, description)
+ 	, oname = option.name()
+ 	, name = camelcase(oname);
 
   // default as 3rd arg
   if (typeof fn != 'function') {
-	if (fn instanceof RegExp) {
-	  var regex = fn;
-	  fn = function(val, def) {
-		var m = regex.exec(val);
-		return m ? m[0] : def;
-	  }
-	}
-	else {
-	  defaultValue = fn;
-	  fn = null;
-	}
+  	if (fn instanceof RegExp) {
+  		var regex = fn;
+  		fn = function(val, def) {
+  			var m = regex.exec(val);
+  			return m ? m[0] : def;
+  		}
+  	}
+  	else {
+  		defaultValue = fn;
+  		fn = null;
+  	}
   }
 
   // preassign default value only for --no-*, [optional], or <required>
@@ -352,7 +371,7 @@ Command.prototype.option = function(flags, description, fn, defaultValue) {
 	if (false == option.bool) defaultValue = true;
 	// preassign only if we have a default
 	if (undefined !== defaultValue) self[name] = defaultValue;
-  }
+}
 
   // register the option
   this.options.push(option);
@@ -362,24 +381,24 @@ Command.prototype.option = function(flags, description, fn, defaultValue) {
   this.on(oname, function(val) {
 	// coercion
 	if (null !== val && fn) val = fn(val, undefined === self[name]
-	  ? defaultValue
-	  : self[name]);
+		? defaultValue
+		: self[name]);
 
 	// unassigned or bool
-	if ('boolean' == typeof self[name] || 'undefined' == typeof self[name]) {
+if ('boolean' == typeof self[name] || 'undefined' == typeof self[name]) {
 	  // if no value, bool true, and we have a default, then use it!
 	  if (null == val) {
-		self[name] = option.bool
-		  ? defaultValue || true
-		  : false;
+	  	self[name] = option.bool
+	  	? defaultValue || true
+	  	: false;
 	  } else {
-		self[name] = val;
+	  	self[name] = val;
 	  }
 	} else if (null !== val) {
 	  // reassign
 	  self[name] = val;
 	}
-  });
+});
 
   return this;
 };
@@ -391,10 +410,10 @@ Command.prototype.option = function(flags, description, fn, defaultValue) {
  * for unknown options.
  * @api public
  */
-Command.prototype.allowUnknownOption = function(arg) {
-	this._allowUnknownOption = arguments.length === 0 || arg;
-	return this;
-};
+ Command.prototype.allowUnknownOption = function(arg) {
+ 	this._allowUnknownOption = arguments.length === 0 || arg;
+ 	return this;
+ };
 
 /**
  * Parse `argv`, settings options and invoking commands when defined.
@@ -404,7 +423,7 @@ Command.prototype.allowUnknownOption = function(arg) {
  * @api public
  */
 
-Command.prototype.parse = function(argv) {
+ Command.prototype.parse = function(argv) {
   // store raw args
   this.rawArgs = argv;
 
@@ -415,7 +434,7 @@ Command.prototype.parse = function(argv) {
   if (this.executables && argv.length < 2 && argv.indexOf('--help') == -1) {
 	// this user needs help
 	argv.push('--help');
-  }
+}
 
   // process argv
   var parsed = this.parseOptions(this.normalize(argv));
@@ -426,15 +445,17 @@ Command.prototype.parse = function(argv) {
   // executable sub-commands
   var name = result.args[0];
   if (this._execs[name] && typeof this._execs[name] != "function") {
-	return this.executeSubCommand(argv, args, parsed.unknown);
+  	return this.executeSubCommand(argv, args, parsed.unknown);
   }
+
+  else this.emit('finish');
 
   return result;
 };
 
 Command.prototype.setShell = function ( instance ) {
 	if(!instance) throw "missing instance name - Command::setShell"
-	this.Shell = instance;
+		this.Shell = instance;
 }
 
 /**
@@ -446,11 +467,11 @@ Command.prototype.setShell = function ( instance ) {
  * @api private
  */
 
-Command.prototype.executeSubCommand = function(argv, args, unknown) {
-  args = args.concat(unknown);
+ Command.prototype.executeSubCommand = function(argv, args, unknown) {
+ 	args = args.concat(unknown);
 
-  if (!args.length) this.help();
-  if ('--help' == args[0] && 1 == args.length) return this.help();
+ 	if (!args.length) this.help();
+ 	if ('--help' == args[0] && 1 == args.length) return this.help();
 
   // executable
   var cmdName = args[0];
@@ -487,36 +508,36 @@ Command.prototype.executeSubCommand = function(argv, args, unknown) {
  * @api private
  */
 
-Command.prototype.normalize = function(args) {
-  var ret = []
-	, arg
-	, lastOpt
-	, index;
+ Command.prototype.normalize = function(args) {
+ 	var ret = []
+ 	, arg
+ 	, lastOpt
+ 	, index;
 
-  for (var i = 0, len = args.length; i < len; ++i) {
-	arg = args[i];
-	if (i > 0) {
-	  lastOpt = this.optionFor(args[i-1]);
-	}
+ 	for (var i = 0, len = args.length; i < len; ++i) {
+ 		arg = args[i];
+ 		if (i > 0) {
+ 			lastOpt = this.optionFor(args[i-1]);
+ 		}
 
-	if (arg === '--') {
+ 		if (arg === '--') {
 	  // Honor option terminator
 	  ret = ret.concat(args.slice(i));
 	  break;
 	} else if (lastOpt && lastOpt.required) {
-	  ret.push(arg);
+		ret.push(arg);
 	} else if (arg.length > 1 && '-' == arg[0] && '-' != arg[1]) {
-	  arg.slice(1).split('').forEach(function(c) {
-		ret.push('-' + c);
-	  });
+		arg.slice(1).split('').forEach(function(c) {
+			ret.push('-' + c);
+		});
 	} else if (/^--/.test(arg) && ~(index = arg.indexOf('='))) {
-	  ret.push(arg.slice(0, index), arg.slice(index + 1));
+		ret.push(arg.slice(0, index), arg.slice(index + 1));
 	} else {
-	  ret.push(arg);
+		ret.push(arg);
 	}
-  }
+}
 
-  return ret;
+return ret;
 };
 
 /**
@@ -531,18 +552,18 @@ Command.prototype.normalize = function(args) {
  * @api private
  */
 
-Command.prototype.parseArgs = function(args, unknown) {
-  var name;
+ Command.prototype.parseArgs = function(args, unknown) {
+ 	var name;
 
-  if (args.length) {
-	name = args[0];
-	if (this.listeners(name).length) {
-	  this.emit(args.shift(), args, unknown);
-	} else {
-	  this.emit('*', args);
-	}
-  } else {
-	outputHelpIfNecessary(this, unknown);
+ 	if (args.length) {
+ 		name = args[0];
+ 		if (this.listeners(name).length) {
+ 			this.emit(args.shift(), args, unknown);
+ 		} else {
+ 			this.emit('*', args);
+ 		}
+ 	} else {
+ 		outputHelpIfNecessary(this, unknown);
 
 	// If there were no args and we have unknown options,
 	// then they are extraneous and we need to error.
@@ -550,9 +571,9 @@ Command.prototype.parseArgs = function(args, unknown) {
 		console.log(unknown);
 	  this.unknownOption(unknown[0]);
 	}*/
-  }
+}
 
-  return this;
+return this;
 };
 
 /**
@@ -563,13 +584,13 @@ Command.prototype.parseArgs = function(args, unknown) {
  * @api private
  */
 
-Command.prototype.optionFor = function(arg) {
-  for (var i = 0, len = this.options.length; i < len; ++i) {
-	if (this.options[i].is(arg)) {
-	  return this.options[i];
-	}
-  }
-};
+ Command.prototype.optionFor = function(arg) {
+ 	for (var i = 0, len = this.options.length; i < len; ++i) {
+ 		if (this.options[i].is(arg)) {
+ 			return this.options[i];
+ 		}
+ 	}
+ };
 
 /**
  * Parse options from `argv` returning `argv`
@@ -580,28 +601,28 @@ Command.prototype.optionFor = function(arg) {
  * @api public
  */
 
-Command.prototype.parseOptions = function(argv) {
-  var args = []
-	, len = argv.length
-	, literal
-	, option
-	, arg;
+ Command.prototype.parseOptions = function(argv) {
+ 	var args = []
+ 	, len = argv.length
+ 	, literal
+ 	, option
+ 	, arg;
 
-  var unknownOptions = [];
+ 	var unknownOptions = [];
 
   // parse options
   for (var i = 0; i < len; ++i) {
-	arg = argv[i];
+  	arg = argv[i];
 
 	// literal args after --
 	if ('--' == arg) {
-	  literal = true;
-	  continue;
+		literal = true;
+		continue;
 	}
 
 	if (literal) {
-	  args.push(arg);
-	  continue;
+		args.push(arg);
+		continue;
 	}
 
 	// find matching Option
@@ -611,43 +632,43 @@ Command.prototype.parseOptions = function(argv) {
 	if (option) {
 	  // requires arg
 	  if (option.required) {
-		arg = argv[++i];
-		if (null == arg) return this.optionMissingArgument(option);
-		this.emit(option.name(), arg);
+	  	arg = argv[++i];
+	  	if (null == arg) return this.optionMissingArgument(option);
+	  	this.emit(option.name(), arg);
 	  // optional arg
-	  } else if (option.optional) {
+	} else if (option.optional) {
 		arg = argv[i+1];
 		if (null == arg || ('-' == arg[0] && '-' != arg)) {
-		  arg = null;
+			arg = null;
 		} else {
-		  ++i;
+			++i;
 		}
 		this.emit(option.name(), arg);
 	  // bool
-	  } else {
+	} else {
 		this.emit(option.name());
-	  }
-	  continue;
 	}
+	continue;
+}
 
 	// looks like an option
 	if (arg.length > 1 && '-' == arg[0]) {
-	  unknownOptions.push(arg);
+		unknownOptions.push(arg);
 
 	  // If the next argument looks like it might be
 	  // an argument for this option, we pass it on.
 	  // If it isn't, then it'll simply be ignored
 	  if (argv[i+1] && '-' != argv[i+1][0]) {
-		unknownOptions.push(argv[++i]);
+	  	unknownOptions.push(argv[++i]);
 	  }
 	  continue;
 	}
 
 	// arg
 	args.push(arg);
-  }
+}
 
-  return { args: args, unknown: unknownOptions };
+return { args: args, unknown: unknownOptions };
 };
 
 /**
@@ -656,16 +677,16 @@ Command.prototype.parseOptions = function(argv) {
  * @return {Object}
  * @api public
  */
-Command.prototype.opts = function() {
-  var result = {}
-	, len = this.options.length;
+ Command.prototype.opts = function() {
+ 	var result = {}
+ 	, len = this.options.length;
 
-  for (var i = 0 ; i < len; i++) {
-	var key = camelcase(this.options[i].name());
-	result[key] = key === 'version' ? this._version : this[key];
-  }
-  return result;
-};
+ 	for (var i = 0 ; i < len; i++) {
+ 		var key = camelcase(this.options[i].name());
+ 		result[key] = key === 'version' ? this._version : this[key];
+ 	}
+ 	return result;
+ };
 
 /**
  * Argument `name` is missing.
@@ -674,11 +695,11 @@ Command.prototype.opts = function() {
  * @api private
  */
 
-Command.prototype.missingArgument = function(name) {
-  console.error();
-  console.error("  error: missing required argument `%s'", name);
-  console.error();
-  console.info(' Shell output implementation ')
+ Command.prototype.missingArgument = function(name) {
+ 	console.error();
+ 	console.error("  error: missing required argument `%s'", name);
+ 	console.error();
+ 	console.info(' Shell output implementation ')
   //process.exit(1);
 };
 
@@ -690,14 +711,14 @@ Command.prototype.missingArgument = function(name) {
  * @api private
  */
 
-Command.prototype.optionMissingArgument = function(option, flag) {
-  console.error();
-  if (flag) {
-	console.error("  error: option `%s' argument missing, got `%s'", option.flags, flag);
-  } else {
-	console.error("  error: option `%s' argument missing", option.flags);
-  }
-  console.info(' Shell output implementation ');
+ Command.prototype.optionMissingArgument = function(option, flag) {
+ 	console.error();
+ 	if (flag) {
+ 		console.error("  error: option `%s' argument missing, got `%s'", option.flags, flag);
+ 	} else {
+ 		console.error("  error: option `%s' argument missing", option.flags);
+ 	}
+ 	console.info(' Shell output implementation ');
   //process.exit(1);
 };
 
@@ -708,11 +729,11 @@ Command.prototype.optionMissingArgument = function(option, flag) {
  * @api private
  */
 
-Command.prototype.unknownOption = function(flag) {
-  if (this._allowUnknownOption) return;
-  console.error();
-  console.error("  error: unknown option `%s'", flag);
-  console.error();
+ Command.prototype.unknownOption = function(flag) {
+ 	if (this._allowUnknownOption) return;
+ 	console.error();
+ 	console.error("  error: unknown option `%s'", flag);
+ 	console.error();
   //process.exit(1);
   console.info(' Shell output implementation ');
 };
@@ -724,10 +745,10 @@ Command.prototype.unknownOption = function(flag) {
  * @api private
  */
 
-Command.prototype.variadicArgNotLast = function(name) {
-  console.error();
-  console.error("  error: variadic arguments must be last `%s'", name);
-  console.error();
+ Command.prototype.variadicArgNotLast = function(name) {
+ 	console.error();
+ 	console.error("  error: variadic arguments must be last `%s'", name);
+ 	console.error();
   //process.exit(1);
   console.info(' Shell output implementation ')
 };
@@ -744,18 +765,18 @@ Command.prototype.variadicArgNotLast = function(name) {
  * @api public
  */
 
-Command.prototype.version = function(str, flags) {
-  if (0 == arguments.length) return this._version;
-  this._version = str;
-  flags = flags || '-V, --version';
-  this.option(flags, 'output the version number');
-  this.on('version', function() {
-	process.stdout.write(str + '\n');
+ Command.prototype.version = function(str, flags) {
+ 	if (0 == arguments.length) return this._version;
+ 	this._version = str;
+ 	flags = flags || '-V, --version';
+ 	this.option(flags, 'output the version number');
+ 	this.on('version', function() {
+ 		process.stdout.write(str + '\n');
 	//process.exit(0);
 	console.info(' Shell output implementation ');
-  });
-  return this;
-};
+});
+ 	return this;
+ };
 
 /**
  * Set the description to `str`.
@@ -765,11 +786,11 @@ Command.prototype.version = function(str, flags) {
  * @api public
  */
 
-Command.prototype.description = function(str) {
-  if (0 === arguments.length) return this._description;
-  this._description = str;
-  return this;
-};
+ Command.prototype.description = function(str) {
+ 	if (0 === arguments.length) return this._description;
+ 	this._description = str;
+ 	return this;
+ };
 
 /**
  * Set an alias for the command
@@ -779,11 +800,11 @@ Command.prototype.description = function(str) {
  * @api public
  */
 
-Command.prototype.alias = function(alias) {
-  if (0 == arguments.length) return this._alias;
-  this._alias = alias;
-  return this;
-};
+ Command.prototype.alias = function(alias) {
+ 	if (0 == arguments.length) return this._alias;
+ 	this._alias = alias;
+ 	return this;
+ };
 
 /**
  * Set / get the command usage `str`.
@@ -793,20 +814,20 @@ Command.prototype.alias = function(alias) {
  * @api public
  */
 
-Command.prototype.usage = function(str) {
-  var args = this._args.map(function(arg) {
-	return humanReadableArgName(arg);
-  });
+ Command.prototype.usage = function(str) {
+ 	var args = this._args.map(function(arg) {
+ 		return humanReadableArgName(arg);
+ 	});
 
-  var usage = '[options]'
-	+ (this.commands.length ? ' [command]' : '')
-	+ (this._args.length ? ' ' + args.join(' ') : '');
+ 	var usage = '[options]'
+ 	+ (this.commands.length ? ' [command]' : '')
+ 	+ (this._args.length ? ' ' + args.join(' ') : '');
 
-  if (0 == arguments.length) return this._usage || usage;
-  this._usage = str;
+ 	if (0 == arguments.length) return this._usage || usage;
+ 	this._usage = str;
 
-  return this;
-};
+ 	return this;
+ };
 
 /**
  * Get the name of the command
@@ -816,9 +837,9 @@ Command.prototype.usage = function(str) {
  * @api public
  */
 
-Command.prototype.name = function() {
-  return this._name;
-};
+ Command.prototype.name = function() {
+ 	return this._name;
+ };
 
 /**
  * Return the largest option length.
@@ -827,11 +848,11 @@ Command.prototype.name = function() {
  * @api private
  */
 
-Command.prototype.largestOptionLength = function() {
-  return this.options.reduce(function(max, option) {
-	return Math.max(max, option.flags.length);
-  }, 0);
-};
+ Command.prototype.largestOptionLength = function() {
+ 	return this.options.reduce(function(max, option) {
+ 		return Math.max(max, option.flags.length);
+ 	}, 0);
+ };
 
 /**
  * Return help for options.
@@ -840,15 +861,15 @@ Command.prototype.largestOptionLength = function() {
  * @api private
  */
 
-Command.prototype.optionHelp = function() {
-  var width = this.largestOptionLength();
+ Command.prototype.optionHelp = function() {
+ 	var width = this.largestOptionLength();
 
   // Prepend the help information
   return [pad('-h, --help', width) + '  ' + 'output usage information']
-	  .concat(this.options.map(function(option) {
-		return pad(option.flags, width) + '  ' + option.description;
-	  }))
-	  .join('\n');
+  .concat(this.options.map(function(option) {
+  	return pad(option.flags, width) + '  ' + option.description;
+  }))
+  .join('\n');
 };
 
 /**
@@ -858,40 +879,40 @@ Command.prototype.optionHelp = function() {
  * @api private
  */
 
-Command.prototype.commandHelp = function() {
-  if (!this.commands.length) return '';
+ Command.prototype.commandHelp = function() {
+ 	if (!this.commands.length) return '';
 
-  var commands = this.commands.filter(function(cmd) {
-	return !cmd._noHelp;
-  }).map(function(cmd) {
-	var args = cmd._args.map(function(arg) {
-	  return humanReadableArgName(arg);
-	}).join(' ');
+ 	var commands = this.commands.filter(function(cmd) {
+ 		return !cmd._noHelp;
+ 	}).map(function(cmd) {
+ 		var args = cmd._args.map(function(arg) {
+ 			return humanReadableArgName(arg);
+ 		}).join(' ');
 
-	return [
-	  cmd._name
-		+ (cmd._alias ? '|' + cmd._alias : '')
-		+ (cmd.options.length ? ' [options]' : '')
-		+ ' ' + args
-	  , cmd.description()
-	];
-  });
+ 		return [
+ 		cmd._name
+ 		+ (cmd._alias ? '|' + cmd._alias : '')
+ 		+ (cmd.options.length ? ' [options]' : '')
+ 		+ ' ' + args
+ 		, cmd.description()
+ 		];
+ 	});
 
-  var width = commands.reduce(function(max, command) {
-	return Math.max(max, command[0].length);
-  }, 0);
+ 	var width = commands.reduce(function(max, command) {
+ 		return Math.max(max, command[0].length);
+ 	}, 0);
 
-  return [
-	''
-	, '  Commands:'
-	, ''
-	, commands.map(function(cmd) {
-	  var desc = cmd[1] ? '  ' + cmd[1] : '';
-	  return pad(cmd[0], width) + desc;
-	}).join('\n').replace(/^/gm, '    ')
-	, ''
-  ].join('\n');
-};
+ 	return [
+ 	''
+ 	, '  Commands:'
+ 	, ''
+ 	, commands.map(function(cmd) {
+ 		var desc = cmd[1] ? '  ' + cmd[1] : '';
+ 		return pad(cmd[0], width) + desc;
+ 	}).join('\n').replace(/^/gm, '    ')
+ 	, ''
+ 	].join('\n');
+ };
 
 /**
  * Return program help documentation.
@@ -900,43 +921,43 @@ Command.prototype.commandHelp = function() {
  * @api private
  */
 
-Command.prototype.helpInformation = function() {
-  var desc = [];
-  if (this._description) {
-	desc = [
-	  '  ' + this._description
-	  , ''
-	];
-  }
+ Command.prototype.helpInformation = function() {
+ 	var desc = [];
+ 	if (this._description) {
+ 		desc = [
+ 		'  ' + this._description
+ 		, ''
+ 		];
+ 	}
 
-  var cmdName = this._name;
-  if (this._alias) {
-	cmdName = cmdName + '|' + this._alias;
-  }
-  var usage = [
-	''
-	,'  Usage: ' + cmdName + ' ' + this.usage()
-	, ''
-  ];
+ 	var cmdName = this._name;
+ 	if (this._alias) {
+ 		cmdName = cmdName + '|' + this._alias;
+ 	}
+ 	var usage = [
+ 	''
+ 	,'  Usage: ' + cmdName + ' ' + this.usage()
+ 	, ''
+ 	];
 
-  var cmds = [];
-  var commandHelp = this.commandHelp();
-  if (commandHelp) cmds = [commandHelp];
+ 	var cmds = [];
+ 	var commandHelp = this.commandHelp();
+ 	if (commandHelp) cmds = [commandHelp];
 
-  var options = [
-	'  Options:'
-	, ''
-	, '' + this.optionHelp().replace(/^/gm, '    ')
-	, ''
-	, ''
-  ];
+ 	var options = [
+ 	'  Options:'
+ 	, ''
+ 	, '' + this.optionHelp().replace(/^/gm, '    ')
+ 	, ''
+ 	, ''
+ 	];
 
-  return usage
-	.concat(cmds)
-	.concat(desc)
-	.concat(options)
-	.join('\n');
-};
+ 	return usage
+ 	.concat(cmds)
+ 	.concat(desc)
+ 	.concat(options)
+ 	.join('\n');
+ };
 
 /**
  * Output help information for this command
@@ -944,20 +965,20 @@ Command.prototype.helpInformation = function() {
  * @api public
  */
 
-Command.prototype.outputHelp = function(cb) {
-  if (!cb) {
-	cb = function(passthru) {
-	  return passthru;
-	}
-  }
-  this.emit('--help');
-  return cb(
-	this.helpInformation()
-	  .replace(/ /g, '&nbsp;')
-	  .replace(/\</g, '&lt;')
-	  .replace(/\>/g, '&gt;')
-  );
-};
+ Command.prototype.outputHelp = function(cb) {
+ 	if (!cb) {
+ 		cb = function(passthru) {
+ 			return passthru;
+ 		}
+ 	}
+ 	this.emit('--help');
+ 	return cb(
+ 		this.helpInformation()
+ 		.replace(/ /g, '&nbsp;')
+ 		.replace(/\</g, '&lt;')
+ 		.replace(/\>/g, '&gt;')
+ 		);
+ };
 
 /**
  * Output help information and exit.
@@ -965,8 +986,8 @@ Command.prototype.outputHelp = function(cb) {
  * @api public
  */
 
-Command.prototype.help = function(cb) {
-  this.outputHelp(cb);
+ Command.prototype.help = function(cb) {
+ 	this.outputHelp(cb);
   //process.exit();
   console.info(' Shell output implementation ');
 };
@@ -979,11 +1000,11 @@ Command.prototype.help = function(cb) {
  * @api private
  */
 
-function camelcase(flag) {
-  return flag.split('-').reduce(function(str, word) {
-	return str + word[0].toUpperCase() + word.slice(1);
-  });
-}
+ function camelcase(flag) {
+ 	return flag.split('-').reduce(function(str, word) {
+ 		return str + word[0].toUpperCase() + word.slice(1);
+ 	});
+ }
 
 /**
  * Pad `str` to `width`.
@@ -994,10 +1015,10 @@ function camelcase(flag) {
  * @api private
  */
 
-function pad(str, width) {
-  var len = Math.max(0, width - str.length);
-  return str + Array(len + 1).join(' ');
-}
+ function pad(str, width) {
+ 	var len = Math.max(0, width - str.length);
+ 	return str + Array(len + 1).join(' ');
+ }
 
 /**
  * Output help information if necessary
@@ -1007,15 +1028,15 @@ function pad(str, width) {
  * @api private
  */
 
-function outputHelpIfNecessary(cmd, options) {
-  options = options || [];
-  for (var i = 0; i < options.length; i++) {
-	if (options[i] == '--help' || options[i] == '-h') {
-	  var help = cmd.outputHelp();
-	  window.shell.output.print(help.split(/\n/))
-	}
-  }
-}
+ function outputHelpIfNecessary(cmd, options) {
+ 	options = options || [];
+ 	for (var i = 0; i < options.length; i++) {
+ 		if (options[i] == '--help' || options[i] == '-h') {
+ 			var help = cmd.outputHelp();
+ 			window.shell.output.print(help.split(/\n/))
+ 		}
+ 	}
+ }
 
 /**
  * Takes an argument an returns its human readable equivalent for help usage.
@@ -1025,21 +1046,21 @@ function outputHelpIfNecessary(cmd, options) {
  * @api private
  */
 
-function humanReadableArgName(arg) {
-  var nameOutput = arg.name + (arg.variadic === true ? '...' : '');
+ function humanReadableArgName(arg) {
+ 	var nameOutput = arg.name + (arg.variadic === true ? '...' : '');
 
-  return arg.required
-	? '<' + nameOutput + '>'
-	: '[' + nameOutput + ']'
-}
+ 	return arg.required
+ 	? '<' + nameOutput + '>'
+ 	: '[' + nameOutput + ']'
+ }
 
 // for versions before node v0.8 when there weren't `fs.existsSync`
 function exists(file) {
-  try {
-	if (fs.statSync(file).isFile()) {
-	  return true;
+	try {
+		if (fs.statSync(file).isFile()) {
+			return true;
+		}
+	} catch (e) {
+		return false;
 	}
-  } catch (e) {
-	return false;
-  }
 }
