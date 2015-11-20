@@ -447,20 +447,45 @@ if ('boolean' == typeof self[name] || 'undefined' == typeof self[name]) {
 
   var rc = this.Shell.runningCommand;
 
-  if (this._execs[name] && typeof this._execs[name] != "function") {
-  	if(!rc.parent)
-  		rc.parent = this;
-  	return this.executeSubCommand(argv, args, parsed.unknown);
-  }
-  
-  // dont have sub-commands
-  else if(rc.parent) {
-  	if(rc.parent._name != this._name)
-  		rc.parent.emit('finish');
-  	this.emit('finish');
+  if (this._execs[name]) {
+  	if(typeof this._execs[name] != "function") {
+	  	if(!rc.parent)
+	  		rc.parent = this;
+
+	  	return this.executeSubCommand(argv, args, parsed.unknown);
+  	}
   }
 
-  else this.emit('finish');
+  else { // if isnt a command
+
+  	console.log(args, argv);
+  	var isArg1 = argv.indexOf('--');
+  	var isArg2 = argv.indexOf('-');
+
+  	if((isArg1 > -1 || isArg2 > -1) && argv[isArg1 || isArg2] !== '--help') {
+  		var index;
+  		if(isArg1 > -1) index = isArg1;
+  		if(isArg2 > -1) index = isArg2;
+
+  		if(isArg1 == 0 || isArg2 == 0) index = 0;
+
+  		this.unknownOption(argv[index]);
+  	}
+
+  	else if (argv.indexOf(name) > -1) {
+  		this.Shell.output.error('No command \''+ (name || this._name) +'\' found');
+  	}
+
+  	if(rc.parent) {
+	  	if(rc.parent._name != this._name)
+	  		rc.parent.emit('finish');
+	  	this.emit('finish');
+	}
+
+	  else this.emit('finish');
+  }
+
+  // dont have sub-commands
 
   return result;
 };
@@ -744,11 +769,12 @@ return { args: args, unknown: unknownOptions };
 
  Command.prototype.unknownOption = function(flag) {
  	if (this._allowUnknownOption) return;
- 	console.error();
- 	console.error("  error: unknown option `%s'", flag);
- 	console.error();
-  //process.exit(1);
-  console.info(' Shell output implementation ');
+
+ 	this.Shell.output.error([
+ 		'',
+ 		"  error: unknown option '" + flag + "'",
+ 		''
+ 	]);
 };
 
 /**
