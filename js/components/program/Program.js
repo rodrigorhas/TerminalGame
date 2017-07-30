@@ -52,7 +52,7 @@ Program.prototype = {
 
 		var key = e.which || e.keyCode;
 
-		if(e.ctrlKey && key == 67) {
+		if(!e.shiftKey && e.ctrlKey && key == 67) {
 			e.preventDefault();
 			this.finish();
 			return;
@@ -105,6 +105,9 @@ Program.prototype = {
 
 	changeInputType: function (type) {
 		var i = this.shell._input;
+
+		console.log(i);
+
 		switch (type) {
 			case 'default':
 				i.removeClass().addClass('input');
@@ -114,5 +117,7 @@ Program.prototype = {
 				i.removeClass().addClass('input password');
 				break;
 		}
+
+		this.shell.focusInput();
 	}
 }

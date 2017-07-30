@@ -3,18 +3,9 @@ $(function () {
 	Ping.start = function () {
 
 		this.packageSize = 64;
-
-		/*var patt = /\-c(.\W+\d)+$/;
-		var s = this.inputCommand.split(' ');
-		var ns = s.slice(2);
-		var nns = ns.join(' ')
-		nns.replace(patt, function (){
-			this.maxPackCount = arguments[0];
-		})*/
+		this.packCount = 0;
 
 		this.preventWrite();
-
-		this.packCount = 0;
 
 		this.startTime = new Date().getTime();
 		this.receivedPacks = 0;

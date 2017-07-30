@@ -83,8 +83,8 @@ Internet.prototype = {
 			var calculatedRates = getOcilation();
 			this.download = calculatedRates.download;
 			this.upload = calculatedRates.upload;
-			console.log('download rate : ' + this.download + ' KB/s');
-			console.log('upload rate : ' + this.upload + ' KB/s');
+			/*console.log('download rate : ' + this.download + ' KB/s');
+			console.log('upload rate : ' + this.upload + ' KB/s');*/
 		}.bind(this), 1000);
 	},
 

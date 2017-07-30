@@ -141,8 +141,8 @@ body{font-family: 'Ubuntu Mono'; background-color: rgb(238, 238, 238);}
 					&.password {
 						-webkit-text-security: disc;
 						text-security: disc;
-						width: 0;
-						height: 0;
+						width: 0.1px;
+						height: 0.1px;
 						overflow: hidden;
 					}
 				}
@@ -222,8 +222,8 @@ body{font-family: 'Ubuntu Mono'; background-color: rgb(238, 238, 238);}
 					&.password {
 						-webkit-text-security: disc;
 						text-security: disc;
-						width: 0;
-						height: 0;
+						width: 0.1px;
+						height: 0.1px;
 						overflow: hidden;
 					}
 				}

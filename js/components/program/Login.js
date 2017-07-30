@@ -9,7 +9,8 @@ $(function () {
 		this.preInputText(this.username + '\'s password:')
 		this.changeInputType('password');
 
-		this.waitForUserInput(function (input){
+		this.waitForUserInput(function (input) {
+
 			_this.shell.clearInput();
 
 			if(!isset(_this.username)) return _this.output.error('Missing username');
@@ -68,13 +69,16 @@ $(function () {
 			// ENTER
 			case 13:
 				e.preventDefault();
+
 				if(this.waitingInput == false) {
 					var cm = this.shell._input.text();
 					if(cm.length) this.enterCommand(cm);
+
 				} else {
 					var cm = this.shell._input.text();
 					this.userInput.trigger(cm);
 				}
+
 				break;
 		}
 	}

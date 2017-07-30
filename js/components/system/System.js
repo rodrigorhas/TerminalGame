@@ -1,7 +1,7 @@
 function System () {
 	this.logged = false;
-	//this.socketConnection = io.connect('http://127.0.0.1:8081');
-	this.socketConnection = io.connect('http://192.168.0.56:8081');
+	this.socketConnection = io.connect('http://127.0.0.1:8081');
+	//this.socketConnection = io.connect('http://192.168.0.56:8081');
 	this.programs = {};
 	this.runningProcesses = {};
 
