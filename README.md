@@ -25,3 +25,9 @@ available commands:
 - logout (logout from current account)
 - cracker (get username and password from target ""only if your cracker program level is greater than target""
 - ping (ping target to know if its online)
+- ifconfig (show current ip)
+
+available test accounts:
+
+* hacebe (passsword: '123123')
+* rodrigorhas (passsword: '123123')
